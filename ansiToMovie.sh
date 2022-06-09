@@ -26,13 +26,13 @@ fi
 
 if [ -z "$1" ]
 then
-	FinalOutName='final.mp4'
+	FinalOutName='withSound.mp4'
 else
 	FinalOutName=$1
 fi
 
 numFiles=()
-fileTypes=("*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
+fileTypes=("*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -72,17 +72,18 @@ do
 	filesize=${filesize::-1}
 	if [ $filesize -gt 480 ] 
 	then
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") Converting --> " $name
+		echo -e  ${green}"##### scroll up video --> " $name ${reset}
+		ffmpeg -hide_banner -loglevel panic -i "$name".mp4 -vf reverse reverse-$name.mp4
+
+		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ##### top down video --> " $name
 		ffmpeg -hide_banner -loglevel panic -f lavfi -i color=s=1920x1080 -loop 1 -t 0.08 -i "$name".png -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" -map "[v]" $name.mp4 -nostdin
 
-		echo -e  ${green}"##### Reversing --> " $name ${reset}
-		ffmpeg -hide_banner -loglevel panic -i "$name".mp4 -vf reverse reverse-$name.mp4
-		echo file $name.mp4 >> mylist.txt
+		echo file reverse-$name.mp4 >> mylist.txt
 
 		if [[ "$name" =~ "lit" || "$name" =~ "LIT" ]]; then
 			echo -e "("${green}") skipping Regular mp4 [lit] --> " $name "${reset}"
 		else
-			echo file reverse-$name.mp4 > mylist.txt
+			echo file $name.mp4 > mylist.txt
 			echo -e "("${green}") Adding Regular mp4 to file --> " $name "${reset}"
 		fi
 
@@ -179,8 +180,8 @@ ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy realFinal.mp4
 duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 realFinal.mp4)
 fade=5
 
-#Set this dir to where you have the MP3s you want to use. They will be added randomly
-allMp3s=(/home/XXXXXXXXXX/Music/*.mp3)
+
+allMp3s=(/home/gunnard/Music/mods/*.mp3)
 echo ${#allMp3s[@]}
 echo "-------------"
 shuffled=( $(shuf -e "${allMp3s[@]}") )
