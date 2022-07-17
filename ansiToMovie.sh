@@ -32,22 +32,24 @@ else
 fi
 
 numFiles=()
-fileTypes=("*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
+fileTypes=("*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
 	if [ -n "$files" ]; then
 		for ((i=0; i<${#files[@]}; i++)); do
 			cleanFile=${files[$i]//!/}
+			cleanFile=${cleanFile// /}
 			if [ "$cleanFile" != "${files[$i]}" ]; then
 				echo "Cleaning....."
 				echo $cleanFile "--" ${files[$i]}
-				mv ${files[$i]} ${cleanFile}
+				mv "${files[$i]}" ${cleanFile}
 			fi
 			theFiles+=("${files[$i]}")
 		done
 	fi
 done
+
 fileType=()
 files=()
 unset theFiles
@@ -61,42 +63,68 @@ do
 		done
 	fi
 done
+
+jpgTypes=("*.jpg" "*.JPG")
+for jpg in "${jpgTypes[@]}"
+do
+	files=($jpg)
+	if [ -n "$files" ]; then
+		for ((i=0; i<${#files[@]}; i++)); do
+			convert ${files[$i]} ${files[$i]}.png
+			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
+		done
+	fi
+done
+
+gifTypes=("*.GIF" "*.gif")
+for gif in "${gifTypes[@]}"
+do
+	files=($gif)
+	if [ -n "$files" ]; then
+		for ((i=0; i<${#files[@]}; i++)); do
+			gif2png -O -d -p ${files[$i]}
+			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
+		done
+	fi
+done
+
 numFiles=${#theFiles[@]}
 processedFiles=0
 
 for name in "${theFiles[@]}"
 do
 	((processedFiles++))
-	ansilove -q ${name}
+	ansilove -q -S ${name}
 	filesize=$(file $name.png | awk 'NR==1{print $7}')
 	filesize=${filesize::-1}
 	if [ $filesize -gt 480 ] 
 	then
-		echo -e  ${green}"##### scroll up video --> " $name ${reset}
-		ffmpeg -hide_banner -loglevel panic -i "$name".mp4 -vf reverse reverse-$name.mp4
-
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ##### top down video --> " $name
+		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ---> Video " $name
 		ffmpeg -hide_banner -loglevel panic -f lavfi -i color=s=1920x1080 -loop 1 -t 0.08 -i "$name".png -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" -map "[v]" $name.mp4 -nostdin
-
-		echo file reverse-$name.mp4 >> mylist.txt
+		
 
 		if [[ "$name" =~ "lit" || "$name" =~ "LIT" ]]; then
-			echo -e "("${green}") skipping Regular mp4 [lit] --> " $name "${reset}"
-		else
+			echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") Adding Lit. " $name
 			echo file $name.mp4 > mylist.txt
-			echo -e "("${green}") Adding Regular mp4 to file --> " $name "${reset}"
+		else
+			echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") <--- Video " $name
+			ffmpeg -loglevel panic -i "$name".mp4 -vf reverse reverse-$name.mp4
+			echo file $name.mp4 > mylist.txt
+			echo file reverse-$name.mp4 >> mylist.txt
 		fi
 
-		echo -e ${green}"##### Making Final --> " $name ${reset}
+		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") <###> " $name
 		ffmpeg -hide_banner -loglevel panic -f concat -i mylist.txt -c copy Final-$name.mp4
 		mv Final-$name.mp4 mp4/
 		rm $name.mp4
-		rm reverse-$name.mp4
+		if [[ "$name" != "lit" || "$name" != "LIT" ]]; then
+			rm reverse-$name.mp4
+		fi
 		rm mylist.txt
 		mv $name.png png/
 		mv $name old/
 else
-	echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}")" ${name}.png "--> " ${filesize}
+	echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}")"${green}") <PNG>  " $name "${reset}"
 	rm ${name}
 		fi		
 	done 
@@ -109,7 +137,6 @@ then
 else
 	maxPngs=${#mp4s[@]}
 fi
-echo "------------------------"
 echo "Adding extra pngs to mp4s"
 processedPngs=0
 for ((i=0; i<${maxPngs}; i++)); do
@@ -129,27 +156,6 @@ done
 
 unset mp4s
 mp4s=(mp4/*)
-gifs=(*.GIF)
-if [ ${#mp4s[@]} -gt ${#gifs[@]} ]
-then
-	maxGifs=${#gifs[@]}
-else
-	maxGifs=${#mp4s[@]}
-fi
-echo "------------------------"
-echo "Adding extra gifs to mp4s"
-processedGifs=0
-for ((i=0; i<${maxGifs}; i++)); do
-	((processedGifs++))
-	echo -e "("${green}${processedGifs}${reset}"/"${green}${maxGifs}${reset}") Adding " ${gifs[$i]} " to " ${mp4s[$i]}
-	ffmpeg -hide_banner -loglevel panic -loop 1 -i "${gifs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=1920:1080 ${gifs[$i]}.mp4
-	echo file ${gifs[$i]}.mp4 > list.txt
-	echo file ${mp4s[$i]} >> list.txt
-	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-${gifs[$i]}.mp4
-	echo -e ${green}"Copying new-"${gifs[$i]}".mp4 to  mp4/"${reset}
-	mv new-${gifs[$i]}.mp4 mp4/
-	rm list.txt
-done
 
 pngs=(*.png)
 if [ ${#pngs[@]} -gt 0 ]
@@ -181,9 +187,7 @@ duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -o
 fade=5
 
 
-allMp3s=(/home/gunnard/Music/mods/*.mp3)
-echo ${#allMp3s[@]}
-echo "-------------"
+allMp3s=(/home/gunnard/Music/mods/mp3s/*.mp3)
 shuffled=( $(shuf -e "${allMp3s[@]}") )
 touch /tmp/shuffMp3s.txt
 for mp31 in ${shuffled[@]}; do
@@ -191,10 +195,10 @@ for mp31 in ${shuffled[@]}; do
 done
 echo "Joining random mp3s"
 ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i /tmp/shuffMp3s.txt -c copy /tmp/shuffmp3.mp3
-rm /tmp/shuffMp3s.txt
+mv /tmp/shuffMp3s.txt .
 echo 'Combining mp3 with video'
 
 ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest ${FinalOutName}
-rm /tmp/shuffmp3.mp3
 rm -rf mp4
+rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
