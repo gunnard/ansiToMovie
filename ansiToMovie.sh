@@ -13,6 +13,8 @@ bold="\e[1m"
 uline="\e[4m"
 reset="\e[0m"
 
+outname=`pwd`
+IFS='/' read -ra my_array <<< "$outname"
 
 if [ ! -d "mp4" ]; then
 	mkdir mp4
@@ -25,10 +27,19 @@ if [ ! -d "old" ]; then
 fi
 
 if [ -z "$1" ]
+
 then
-	FinalOutName='withSound.mp4'
+	FinalOutName=${my_array[-1]}.mp4
 else
 	FinalOutName=$1
+fi
+
+if [ -f "ACIDVIEW.EXE" ]; then
+	rm ACIDVIEW*
+fi
+
+if [ -f "WE-WILL.SUE" ]; then
+	rm WE-WILL.SUE
 fi
 
 numFiles=()
@@ -71,6 +82,7 @@ do
 	if [ -n "$files" ]; then
 		for ((i=0; i<${#files[@]}; i++)); do
 			convert ${files[$i]} ${files[$i]}.png
+			rm ${files[$i]}
 			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
 		done
 	fi
