@@ -33,12 +33,17 @@ then
 else
 	FinalOutName=$1
 fi
+echo "[===============]"
+echo "Begin creating $FinalOutName"
+echo "[===============]"
 
 if [ -f "ACIDVIEW.EXE" ]; then
+	echo "Removing AcIDVIEW files"
 	rm ACIDVIEW*
 fi
 
 if [ -f "WE-WILL.SUE" ]; then
+	echo "Removing WE-WILL.SUE"
 	rm WE-WILL.SUE
 fi
 
@@ -214,3 +219,6 @@ ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filte
 rm -rf mp4
 rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
+echo "[===============]"
+echo "END $FinalOutName"
+echo "[===============]"
