@@ -1,0 +1,12 @@
+version: "3.3"
+services:
+
+    # ubuntu
+    app:
+        build: .
+        container_name: ansiToMovie 
+        working_dir: /tmp/ansi/
+        volumes:
+            - ./ansi:/tmp/ansi
+            - ./mp3s:/tmp/mp3s
+        tty: true
