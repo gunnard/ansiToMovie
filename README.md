@@ -6,7 +6,11 @@ Ansilove https://www.ansilove.org/
 FFmpeg
 https://ffmpeg.org/
 
+``docker-compose up -d``
+to connect:
 
-Edit line #183 to point to where your music is.
+``docker exec -ti ansiToMovie bash``
 
-``183 allMp3s=(/home/XXXXXXXXXX/Music/*.mp3)``
+``/ansi`` and ``/mp3s`` are mapped to your host computer. put the files there
+
+This version checks for ``intro.mp4`` in the pack directory and puts it first if available
