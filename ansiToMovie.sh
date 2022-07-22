@@ -187,12 +187,15 @@ then
 	echo "Making final png mp4"
 	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-allother.mp4
 	mv new-allother.mp4 mp4/
-	rm *.mp4
+	#rm *.mp4
 	rm list.txt
 fi
 
 touch list.txt
 finalmp4s=(mp4/*)
+if [ -f "intro.mp4" ]; then
+	echo "file intro.mp4" >> list.txt
+fi
 for ((i=0; i<${#finalmp4s[@]}; i++)); do
 	echo "("${i}"/"${#finalmp4s[@]}") Adding " ${finalmp4s[$i]}
 	echo file ${finalmp4s[$i]} >> list.txt
@@ -204,7 +207,7 @@ duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -o
 fade=5
 
 
-allMp3s=(/home/gunnard/Music/mods/mp3s/*.mp3)
+allMp3s=(/tmp/mp3s/*.mp3)
 shuffled=( $(shuf -e "${allMp3s[@]}") )
 touch /tmp/shuffMp3s.txt
 for mp31 in ${shuffled[@]}; do
@@ -219,6 +222,7 @@ ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filte
 rm -rf mp4
 rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
+rm list.txt
 echo "[===============]"
 echo "END $FinalOutName"
 echo "[===============]"
