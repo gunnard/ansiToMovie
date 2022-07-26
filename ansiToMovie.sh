@@ -49,6 +49,11 @@ fi
 
 numFiles=()
 fileTypes=("*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
+
+echo "[===============]"
+echo " Cleaning Files"
+echo "[===============]"
+
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -81,6 +86,9 @@ do
 done
 
 jpgTypes=("*.jpg" "*.JPG")
+echo "[======================]"
+echo " Converting jpg to png"
+echo "[======================]"
 for jpg in "${jpgTypes[@]}"
 do
 	files=($jpg)
@@ -93,6 +101,9 @@ do
 	fi
 done
 
+echo "[======================]"
+echo " Converting gif to png"
+echo "[======================]"
 gifTypes=("*.GIF" "*.gif")
 for gif in "${gifTypes[@]}"
 do
@@ -108,6 +119,9 @@ done
 numFiles=${#theFiles[@]}
 processedFiles=0
 
+echo "[======================]"
+echo " Converting png to mp4"
+echo "[======================]"
 for name in "${theFiles[@]}"
 do
 	((processedFiles++))
@@ -140,11 +154,11 @@ do
 		rm mylist.txt
 		mv $name.png png/
 		mv $name old/
-else
-	echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}")"${green}") <PNG>  " $name "${reset}"
-	rm ${name}
-		fi		
-	done 
+    else
+        echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}")"${green}") <PNG>  " $name "${reset}"
+        rm ${name}
+    fi		
+done 
 
 mp4s=(mp4/*)
 pngs=(*.png)
@@ -154,7 +168,9 @@ then
 else
 	maxPngs=${#mp4s[@]}
 fi
-echo "Adding extra pngs to mp4s"
+echo "[======================]"
+echo " Adding pngs to mp4"
+echo "[======================]"
 processedPngs=0
 for ((i=0; i<${maxPngs}; i++)); do
 	((processedPngs++))
@@ -213,10 +229,11 @@ touch /tmp/shuffMp3s.txt
 for mp31 in ${shuffled[@]}; do
     echo file $mp31 >> /tmp/shuffMp3s.txt
 done
-echo "Joining random mp3s"
+echo "[======================]"
+echo " Adding Music"
+echo "[======================]"
 ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i /tmp/shuffMp3s.txt -c copy /tmp/shuffmp3.mp3
 mv /tmp/shuffMp3s.txt .
-echo 'Combining mp3 with video'
 
 ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest ${FinalOutName}
 rm -rf mp4
