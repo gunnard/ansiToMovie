@@ -1,10 +1,8 @@
 # ansiToMovie
 
 ## Requirements:
-Ansilove https://www.ansilove.org/
 
-FFmpeg
-https://ffmpeg.org/
+Docker
 
 ``docker-compose up -d``
 to connect:
@@ -13,4 +11,8 @@ to connect:
 
 ``/ansi`` and ``/mp3s`` are mapped to your host computer. put the files there
 
-This version checks for ``intro.mp4`` in the pack directory and puts it first if available
+you should create an ``img/`` directory within each unzipped pack for your assets like intro.mp4 and thumbnails.
+
+This version checks for ``img/intro.mp4`` in the pack directory and puts it first if available
+
+copy ``ansiToMovie.sh`` to ``/usr/bin`` if you want to run this globally

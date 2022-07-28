@@ -51,7 +51,7 @@ if [ -f "WE-WILL.SUE" ]; then
 fi
 
 numFiles=()
-fileTypes=("*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
+fileTypes=("*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -224,6 +224,10 @@ rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
 rm list.txt
 
+echo "[===============]"
+echo "END $FinalOutName"
+echo "[===============]"
+
 touch list.txt
 echo 'Making Tiktoks'
 tiktoks=(mp4/*)
@@ -261,7 +265,3 @@ echo "[===============]"
 
 
 
-
-echo "[===============]"
-echo "END $FinalOutName"
-echo "[===============]"
