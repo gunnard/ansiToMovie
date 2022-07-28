@@ -25,6 +25,9 @@ fi
 if [ ! -d "old" ]; then
 	mkdir old
 fi
+if [ ! -d "tiktok" ]; then
+	mkdir tiktok 
+fi
 
 if [ -z "$1" ]
 
@@ -48,7 +51,7 @@ if [ -f "WE-WILL.SUE" ]; then
 fi
 
 numFiles=()
-fileTypes=("*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT")
+fileTypes=("*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -139,13 +142,10 @@ do
 			rm reverse-$name.mp4
 		fi
 		rm mylist.txt
+    fi		
 		mv $name.png png/
 		mv $name old/
-else
-	echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}")"${green}" <PNG>  " $name "${reset}"
-	rm ${name}
-		fi		
-	done 
+done 
 
 mp4s=(mp4/*)
 pngs=(*.png)
@@ -188,14 +188,13 @@ then
 	echo "Making final png mp4"
 	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-allother.mp4
 	mv new-allother.mp4 mp4/
-	#rm *.mp4
 	rm list.txt
 fi
 
 touch list.txt
 finalmp4s=(mp4/*)
-if [ -f "intro.mp4" ]; then
-	echo "file intro.mp4" >> list.txt
+if [ -f "img/intro.mp4" ]; then
+	echo "file img/intro.mp4" >> list.txt
 fi
 for ((i=0; i<${#finalmp4s[@]}; i++)); do
 	echo "("${i}"/"${#finalmp4s[@]}") Adding " ${finalmp4s[$i]}
@@ -220,10 +219,49 @@ mv /tmp/shuffMp3s.txt .
 echo 'Combining mp3 with video'
 
 ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest ${FinalOutName}
-rm -rf mp4
+rm mp4/new-allother.mp4
 rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
 rm list.txt
+
+touch list.txt
+echo 'Making Tiktoks'
+tiktoks=(mp4/*)
+for ((i=0; i<${#tiktoks[@]}; i++)); do
+    if [ -f "img/intro.mp4" ]; then
+        echo "file img/intro.mp4" >> list.txt
+    fi
+	echo "("${i}"/"${#tiktoks[@]}") tiktoking  "${tiktoks[$i]}
+	echo file ${tiktoks[$i]} >> list.txt
+    ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy ${tiktoks[$i]}-no-sound.mp4
+    rm list.txt
+    duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 ${tiktoks[$i]}-no-sound.mp4)
+    fade=5
+    allMp3s=(/tmp/mp3s/*.mp3)
+    shuffled=( $(shuf -e "${allMp3s[@]}") )
+    touch /tmp/shuffMp3s.txt
+    for mp31 in ${shuffled[@]}; do
+        echo file $mp31 >> /tmp/shuffMp3s.txt
+    done
+    echo "Joining random mp3s"
+    ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i /tmp/shuffMp3s.txt -c copy /tmp/shuffmp3.mp3
+    echo 'Combining mp3 with video'
+    rm /tmp/shuffMp3s.txt
+
+    IFS='/' read -ra my_array <<< "${tiktoks[$i]}"
+    ffmpeg -hide_banner -loglevel panic -i ${tiktoks[$i]}-no-sound.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest tiktok/${my_array[-1]}.mp4
+    rm ${tiktoks[$i]}-no-sound.mp4
+    rm /tmp/shuffmp3.mp3
+done
+
+echo "[===============]"
+echo "END making tiktoks"
+echo "[===============]"
+
+
+
+
+
 echo "[===============]"
 echo "END $FinalOutName"
 echo "[===============]"
