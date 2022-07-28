@@ -138,7 +138,7 @@ do
 		ffmpeg -hide_banner -loglevel panic -f concat -i mylist.txt -c copy Final-$name.mp4
 		mv Final-$name.mp4 mp4/
 		rm $name.mp4
-		if [[ "$name" != "lit" || "$name" != "LIT" ]]; then
+		if [[ "$name" !=~ "lit" || "$name" !=~ "LIT" ]]; then
 			rm reverse-$name.mp4
 		fi
 		rm mylist.txt
