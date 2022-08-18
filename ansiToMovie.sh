@@ -51,7 +51,7 @@ if [ -f "WE-WILL.SUE" ]; then
 fi
 
 numFiles=()
-fileTypes=("*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
+fileTypes=("*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -61,6 +61,7 @@ do
 			cleanFile=${cleanFile// /}
 			cleanFile=${cleanFile//^/}
 			cleanFile=${cleanFile//&/}
+			cleanFile=${cleanFile//%/}
 			if [ "$cleanFile" != "${files[$i]}" ]; then
 				echo "Cleaning....."
 				echo $cleanFile "--" ${files[$i]}
@@ -79,7 +80,13 @@ do
 	files=($fileType)
 	if [ -n "$files" ]; then
 		for ((i=0; i<${#files[@]}; i++)); do
-			theFiles+=("${files[$i]}")
+			echo "adding: ${files[$i]}\n"
+			if [[ ${theFiles[*]} =~ ${files[$i]} ]]
+			then
+				echo "Skipping Dupe ${files[$i]}\n"
+			else
+				theFiles+=("${files[$i]}")
+			fi
 		done
 	fi
 done
@@ -112,10 +119,11 @@ done
 numFiles=${#theFiles[@]}
 processedFiles=0
 
+echo "Total files to encode: ${numFiles}"
 for name in "${theFiles[@]}"
 do
 	((processedFiles++))
-	ansilove -q -S ${name}
+	ansilove -q -d -S ${name}
 	filesize=$(file $name.png | awk 'NR==1{print $7}')
 	filesize=${filesize::-1}
 	if [ $filesize -gt 480 ] 
@@ -138,7 +146,10 @@ do
 		ffmpeg -hide_banner -loglevel panic -f concat -i mylist.txt -c copy Final-$name.mp4
 		mv Final-$name.mp4 mp4/
 		rm $name.mp4
-		if [[ "$name" !=~ "lit" || "$name" !=~ "LIT" ]]; then
+		if [[ "$name" =~ "lit" || "$name" =~ "LIT" ]]; then
+			continue
+			rm $name
+		else
 			rm reverse-$name.mp4
 		fi
 		rm mylist.txt
@@ -186,6 +197,8 @@ then
 		mv ${pngs[$i]} png/
 	done
 	echo "Making final png mp4"
+	echo "Making final png mp4"
+	echo "Making final png mp4"
 	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-allother.mp4
 	mv new-allother.mp4 mp4/
 	rm list.txt
@@ -232,10 +245,10 @@ touch list.txt
 echo 'Making Tiktoks'
 tiktoks=(mp4/*)
 for ((i=0; i<${#tiktoks[@]}; i++)); do
-    if [ -f "img/intro.mp4" ]; then
-        echo "file img/intro.mp4" >> list.txt
-    fi
 	echo "("${i}"/"${#tiktoks[@]}") tiktoking  "${tiktoks[$i]}
+	if [ -f "img/intro.mp4" ]; then
+		echo "file img/intro.mp4" >> list.txt
+	fi
 	echo file ${tiktoks[$i]} >> list.txt
     ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy ${tiktoks[$i]}-no-sound.mp4
     rm list.txt
