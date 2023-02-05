@@ -132,29 +132,11 @@ do
 		ffmpeg -hide_banner -loglevel panic -f lavfi -i color=s=1920x1080 -loop 1 -t 0.08 -i "$name".png -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" -map "[v]" $name.mp4 -nostdin
 		
 
-		if [[ "$name" =~ "lit" || "$name" =~ "LIT" ]]; then
-			echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") Adding Lit. " $name
-			echo file $name.mp4 > mylist.txt
-		else
-			echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") <--- Video " $name
-			ffmpeg -loglevel panic -i "$name".mp4 -vf reverse reverse-$name.mp4
-			echo file $name.mp4 > mylist.txt
-			echo file reverse-$name.mp4 >> mylist.txt
-		fi
-
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") <###> " $name
-		ffmpeg -hide_banner -loglevel panic -f concat -i mylist.txt -c copy Final-$name.mp4
-		mv Final-$name.mp4 mp4/
-		rm $name.mp4
-		if [[ "$name" =~ "lit" || "$name" =~ "LIT" ]]; then
-			continue
-			rm $name
-		else
-			rm reverse-$name.mp4
-		fi
-		rm mylist.txt
-    fi		
+		mv $name.mp4 mp4/
+	else 
+		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ---> png " $name
 		mv $name.png png/
+	fi
 		mv $name old/
 done 
 
@@ -197,8 +179,6 @@ then
 		mv ${pngs[$i]} png/
 	done
 	echo "Making final png mp4"
-	echo "Making final png mp4"
-	echo "Making final png mp4"
 	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-allother.mp4
 	mv new-allother.mp4 mp4/
 	rm list.txt
@@ -209,10 +189,17 @@ finalmp4s=(mp4/*)
 if [ -f "img/intro.mp4" ]; then
 	echo "file img/intro.mp4" >> list.txt
 fi
+
+
 for ((i=0; i<${#finalmp4s[@]}; i++)); do
 	echo "("${i}"/"${#finalmp4s[@]}") Adding " ${finalmp4s[$i]}
 	echo file ${finalmp4s[$i]} >> list.txt
 done
+
+if [ -f "img/outtro.mp4" ]; then
+	echo "outtro"
+	echo "file img/outtro.mp4" >> list.txt
+fi
 
 ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy realFinal.mp4
 
@@ -235,7 +222,6 @@ ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filte
 rm mp4/new-allother.mp4
 rm /tmp/shuffmp3.mp3
 rm realFinal.mp4
-rm list.txt
 
 echo "[===============]"
 echo "END $FinalOutName"
