@@ -51,7 +51,7 @@ if [ -f "WE-WILL.SUE" ]; then
 fi
 
 numFiles=()
-fileTypes=("*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
+fileTypes=("*.GRT" "*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
 for fileType in "${fileTypes[@]}"
 do
 	files=($fileType)
@@ -60,6 +60,7 @@ do
 			cleanFile=${files[$i]//!/}
 			cleanFile=${cleanFile// /}
 			cleanFile=${cleanFile//^/}
+			cleanFile=${cleanFile//+/}
 			cleanFile=${cleanFile//&/}
 			cleanFile=${cleanFile//%/}
 			if [ "$cleanFile" != "${files[$i]}" ]; then
@@ -68,6 +69,7 @@ do
 				mv "${files[$i]}" ${cleanFile}
 			fi
 			theFiles+=("${files[$i]}")
+			echo "adding: ${files[$i]}\n"
 		done
 	fi
 done
@@ -80,12 +82,12 @@ do
 	files=($fileType)
 	if [ -n "$files" ]; then
 		for ((i=0; i<${#files[@]}; i++)); do
-			echo "adding: ${files[$i]}\n"
 			if [[ ${theFiles[*]} =~ ${files[$i]} ]]
 			then
 				echo "Skipping Dupe ${files[$i]}\n"
 			else
 				theFiles+=("${files[$i]}")
+				echo "adding new: ${files[$i]}\n"
 			fi
 		done
 	fi
@@ -128,14 +130,12 @@ do
 	filesize=${filesize::-1}
 	if [ $filesize -gt 480 ] 
 	then
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ---> Video " $name
+		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") size: "${filesize}" ---> Video " $name
 		ffmpeg -hide_banner -loglevel panic -f lavfi -i color=s=1920x1080 -loop 1 -t 0.08 -i "$name".png -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" -map "[v]" $name.mp4 -nostdin
-		
-
+		rm $name.png		
 		mv $name.mp4 mp4/
 	else 
 		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ---> png " $name
-		mv $name.png png/
 	fi
 		mv $name old/
 done 
@@ -148,33 +148,40 @@ then
 else
 	maxPngs=${#mp4s[@]}
 fi
-echo "Adding extra pngs to mp4s"
+echo -e "("${green}${#pngs[@]}${reset}"/"${green}${#mp4s[@]}${reset}")" 
+echo "Adding pngs to mp4s"
 processedPngs=0
 for ((i=0; i<${maxPngs}; i++)); do
 	((processedPngs++))
 	echo -e "("${green}${processedPngs}${reset}"/"${green}${maxPngs}${reset}") Adding " ${pngs[$i]} " to " ${mp4s[$i]}
-	ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=1920:1080 ${pngs[$i]}.mp4
+	ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=800:600 ${pngs[$i]}.mp4
 	echo file ${pngs[$i]}.mp4 > list.txt
 	echo file ${mp4s[$i]} >> list.txt
 	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-${pngs[$i]}.mp4
 	echo -e ${green}"Copying new-"${pngs[$i]}".mp4 to  mp4/"${reset}
-	mv new-${pngs[$i]}.mp4 mp4/
 	mv ${pngs[$i]} png/
 	mv ${pngs[$i]}.mp4 old/
 	mv ${mp4s[$i]} old/
 	rm list.txt
 done
 
-unset mp4s
-mp4s=(mp4/*)
+#move concatted png+mp4 to /mp4
+newmp4s=(*.mp4)
+newmp4files=${#newmp4s[@]}
+for ((i=0; i<${newmp4files}; i++)); do
+	echo -e ${green}"Copying "${newmp4s[$i]}" to  mp4/"${reset}
+	mv ${newmp4s[$i]} mp4/
+done
+#-------------
 
+mp4s=(mp4/*)
 pngs=(*.png)
 if [ ${#pngs[@]} -gt 0 ]
 then
 	touch list.txt
 	for ((i=0; i<${#pngs[@]}; i++)); do
 		echo -e "("${green}${i}${reset}"/"${green}${#pngs[@]}${reset}") Adding " ${pngs[$i]}
-		ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=1920:1080 ${pngs[$i]}.mp4
+		ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=800:600 ${pngs[$i]}.mp4
 		echo file ${pngs[$i]}".mp4" >> list.txt
 		mv ${pngs[$i]} png/
 	done
@@ -210,6 +217,14 @@ fade=5
 allMp3s=(/tmp/mp3s/*.mp3)
 shuffled=( $(shuf -e "${allMp3s[@]}") )
 touch /tmp/shuffMp3s.txt
+newMp3s=("*.MP3")
+if [ -n "$newMp3s" ]; then
+	for newMp3 in ${newMp3s[@]}; do
+		cp $newMp3 /tmp/mp3s
+		echo file /tmp/mp3s/$newMp3 >> /tmp/shuffMp3s.txt
+	done
+fi
+
 for mp31 in ${shuffled[@]}; do
     echo file $mp31 >> /tmp/shuffMp3s.txt
 done
@@ -221,7 +236,7 @@ echo 'Combining mp3 with video'
 ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest ${FinalOutName}
 rm mp4/new-allother.mp4
 rm /tmp/shuffmp3.mp3
-rm realFinal.mp4
+#rm realFinal.mp4
 
 echo "[===============]"
 echo "END $FinalOutName"
