@@ -50,6 +50,27 @@ if [ -f "WE-WILL.SUE" ]; then
 	rm WE-WILL.SUE
 fi
 
+fileTypes=("*.GIF" "*.gif")
+for fileType in "${fileTypes[@]}"
+do
+	files=($fileType)
+	if [ -n "$files" ]; then
+		for ((i=0; i<${#files[@]}; i++)); do
+			cleanFile=${files[$i]//!/}
+			cleanFile=${cleanFile// /}
+			cleanFile=${cleanFile//^/}
+			cleanFile=${cleanFile//+/}
+			cleanFile=${cleanFile//&/}
+			cleanFile=${cleanFile//%/}
+			if [ "$cleanFile" != "${files[$i]}" ]; then
+				echo "Cleaning....."
+				echo $cleanFile "--" ${files[$i]}
+				mv "${files[$i]}" ${cleanFile}
+			fi
+		done
+	fi
+done
+
 numFiles=()
 fileTypes=("*.GRT" "*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
 for fileType in "${fileTypes[@]}"
@@ -114,6 +135,9 @@ do
 		for ((i=0; i<${#files[@]}; i++)); do
 			gif2png -O -d -p ${files[$i]}
 			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
+			#ffmpeg -stream_loop 20 -i ${files[$i]} ${files[$i]}-loop.gif -y
+			#ffmpeg -i ${files[$i]}-loop.gif -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" ${files[$i]}.mp4 -y
+			rm ${files[$i]}
 		done
 	fi
 done
@@ -142,6 +166,7 @@ done
 
 mp4s=(mp4/*)
 pngs=(*.png)
+
 if [ ${#mp4s[@]} -gt ${#pngs[@]} ]
 then
 	maxPngs=${#pngs[@]}
@@ -167,6 +192,7 @@ done
 
 #move concatted png+mp4 to /mp4
 newmp4s=(*.mp4)
+
 newmp4files=${#newmp4s[@]}
 for ((i=0; i<${newmp4files}; i++)); do
 	echo -e ${green}"Copying "${newmp4s[$i]}" to  mp4/"${reset}
@@ -176,6 +202,7 @@ done
 
 mp4s=(mp4/*)
 pngs=(*.png)
+
 if [ ${#pngs[@]} -gt 0 ]
 then
 	touch list.txt
@@ -193,6 +220,8 @@ fi
 
 touch list.txt
 finalmp4s=(mp4/*)
+finalmp4s=( $(shuf -e "${finalmp4s[@]}") )
+if [ ${#pngs[@]} -gt 0 ]
 if [ -f "img/intro.mp4" ]; then
 	echo "file img/intro.mp4" >> list.txt
 fi
@@ -275,7 +304,3 @@ done
 echo "[===============]"
 echo "END making tiktoks"
 echo "[===============]"
-
-
-
-
