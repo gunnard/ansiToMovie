@@ -16,11 +16,6 @@ reset="\e[0m"
 outname=`pwd`
 IFS='/' read -ra my_array <<< "$outname"
 
-echo "[==========================================]"
-echo "| creating backup ../clean_${my_array[-1]} |"
-echo "[==========================================]"
-cp -R ${outname} ../clean_${my_array[-1]}
-
 if [ ! -d "mp4" ]; then
 	mkdir mp4
 fi
@@ -41,18 +36,13 @@ then
 else
 	FinalOutName=$1
 fi
-echo "[==============================]"
-echo "| Begin creating $FinalOutName |"
-echo "[==============================]"
+echo "[===============]"
+echo "Begin creating $FinalOutName"
+echo "[===============]"
 
 if [ -f "ACIDVIEW.EXE" ]; then
 	echo "Removing AcIDVIEW files"
 	rm ACIDVIEW*
-fi
-
-if [ -f "ICEVIEW.EXE" ]; then
-	echo "Removing iCEVIEW files"
-	rm ICEVIEW*
 fi
 
 if [ -f "WE-WILL.SUE" ]; then
@@ -231,6 +221,7 @@ fi
 touch list.txt
 finalmp4s=(mp4/*)
 finalmp4s=( $(shuf -e "${finalmp4s[@]}") )
+if [ ${#pngs[@]} -gt 0 ]
 if [ -f "img/intro.mp4" ]; then
 	echo "file img/intro.mp4" >> list.txt
 fi
