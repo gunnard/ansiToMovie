@@ -1,315 +1,230 @@
 #!/bin/bash
+
+# Enable better error handling
+set -euo pipefail
 shopt -s nullglob dotglob
-# Ansi color code variables
-red="\e[0;91m"
-blue="\e[0;94m"
-expand_bg="\e[K"
-blue_bg="\e[0;104m${expand_bg}"
-red_bg="\e[0;101m${expand_bg}"
-green_bg="\e[0;102m${expand_bg}"
-green="\e[0;92m"
-white="\e[0;97m"
-bold="\e[1m"
-uline="\e[4m"
-reset="\e[0m"
 
-outname=`pwd`
-IFS='/' read -ra my_array <<< "$outname"
+# Color definitions
+declare -A colors=(
+    ["red"]="\e[0;91m"
+    ["blue"]="\e[0;94m"
+    ["green"]="\e[0;92m"
+    ["white"]="\e[0;97m"
+    ["reset"]="\e[0m"
+)
 
-echo "[==========================================]"
-echo "| creating backup ../clean_${my_array[-1]} |"
-echo "[==========================================]"
-cp -R ${outname} ../clean_${my_array[-1]}
+# Configuration
+readonly REQUIRED_DIRS=("mp4" "png" "old" "tiktok")
+readonly CLEANUP_FILES=("ACIDVIEW.EXE" "ICEVIEW.EXE" "WE-WILL.SUE")
+readonly IMAGE_TYPES=("*.jpg" "*.JPG" "*.GIF" "*.gif")
+readonly TEXT_TYPES=("*.GRT" "*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" 
+                    "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" 
+                    "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" 
+                    "*.MEM" "*.GOT" "*.rmx")
 
-if [ ! -d "mp4" ]; then
-	mkdir mp4
-fi
-if [ ! -d "png" ]; then
-	mkdir png
-fi
-if [ ! -d "old" ]; then
-	mkdir old
-fi
-if [ ! -d "tiktok" ]; then
-	mkdir tiktok 
-fi
+# Logging functions
+log_info() {
+    echo -e "${colors[green]}[INFO] $1${colors[reset]}"
+}
 
-if [ -z "$1" ]
+log_error() {
+    echo -e "${colors[red]}[ERROR] $1${colors[reset]}" >&2
+}
 
-then
-	FinalOutName=${my_array[-1]}.mp4
-else
-	FinalOutName=$1
-fi
-echo "[==============================]"
-echo "| Begin creating $FinalOutName |"
-echo "[==============================]"
+# Get output filename from current directory
+get_output_filename() {
+    local current_dir=$(basename "$(pwd)")
+    echo "${current_dir}.mp4"
+}
 
-if [ -f "ACIDVIEW.EXE" ]; then
-	echo "Removing AcIDVIEW files"
-	rm ACIDVIEW*
-fi
-
-if [ -f "ICEVIEW.EXE" ]; then
-	echo "Removing iCEVIEW files"
-	rm ICEVIEW*
-fi
-
-if [ -f "WE-WILL.SUE" ]; then
-	echo "Removing WE-WILL.SUE"
-	rm WE-WILL.SUE
-fi
-
-fileTypes=("*.GIF" "*.gif")
-for fileType in "${fileTypes[@]}"
-do
-	files=($fileType)
-	if [ -n "$files" ]; then
-		for ((i=0; i<${#files[@]}; i++)); do
-			cleanFile=${files[$i]//!/}
-			cleanFile=${cleanFile// /}
-			cleanFile=${cleanFile//^/}
-			cleanFile=${cleanFile//+/}
-			cleanFile=${cleanFile//&/}
-			cleanFile=${cleanFile//%/}
-			if [ "$cleanFile" != "${files[$i]}" ]; then
-				echo "Cleaning....."
-				echo $cleanFile "--" ${files[$i]}
-				mv "${files[$i]}" ${cleanFile}
-			fi
-		done
-	fi
-done
-
-numFiles=()
-fileTypes=("*.GRT" "*.BIN" "*.LGO" "*.CIA" "*.WKD" "*.wkd" "*.VIV" "*.viv" "*.FL" "*.IMP" "*.txt" "*.ans" "*.asc" "*.LGC" "*.ASC" "*.NFO" "*.ANS" "*.ans" "*.DRK" "*.ICE" "*.LIT" "*.MEM" "*.DIZ" "*.STS" "*.MEM" "*.GOT" "*.rmx")
-for fileType in "${fileTypes[@]}"
-do
-	files=($fileType)
-	if [ -n "$files" ]; then
-		for ((i=0; i<${#files[@]}; i++)); do
-			cleanFile=${files[$i]//!/}
-			cleanFile=${cleanFile// /}
-			cleanFile=${cleanFile//^/}
-			cleanFile=${cleanFile//+/}
-			cleanFile=${cleanFile//&/}
-			cleanFile=${cleanFile//%/}
-			if [ "$cleanFile" != "${files[$i]}" ]; then
-				echo "Cleaning....."
-				echo $cleanFile "--" ${files[$i]}
-				mv "${files[$i]}" ${cleanFile}
-			fi
-			theFiles+=("${files[$i]}")
-			echo "adding: ${files[$i]}\n"
-		done
-	fi
-done
-
-fileType=()
-files=()
-unset theFiles
-for fileType in "${fileTypes[@]}"
-do
-	files=($fileType)
-	if [ -n "$files" ]; then
-		for ((i=0; i<${#files[@]}; i++)); do
-			if [[ ${theFiles[*]} =~ ${files[$i]} ]]
-			then
-				echo "Skipping Dupe ${files[$i]}\n"
-			else
-				theFiles+=("${files[$i]}")
-				echo "adding new: ${files[$i]}\n"
-			fi
-		done
-	fi
-done
-
-jpgTypes=("*.jpg" "*.JPG")
-for jpg in "${jpgTypes[@]}"
-do
-	files=($jpg)
-	if [ -n "$files" ]; then
-		for ((i=0; i<${#files[@]}; i++)); do
-			convert ${files[$i]} ${files[$i]}.png
-			rm ${files[$i]}
-			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
-		done
-	fi
-done
-
-gifTypes=("*.GIF" "*.gif")
-for gif in "${gifTypes[@]}"
-do
-	files=($gif)
-	if [ -n "$files" ]; then
-		for ((i=0; i<${#files[@]}; i++)); do
-			gif2png -O -d -p ${files[$i]}
-			echo -e ${green}"converting "${files[$i]}" to  png"${reset}
-			#ffmpeg -stream_loop 20 -i ${files[$i]} ${files[$i]}-loop.gif -y
-			#ffmpeg -i ${files[$i]}-loop.gif -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" ${files[$i]}.mp4 -y
-			rm ${files[$i]}
-		done
-	fi
-done
-
-numFiles=${#theFiles[@]}
-processedFiles=0
-
-echo "Total files to encode: ${numFiles}"
-for name in "${theFiles[@]}"
-do
-	((processedFiles++))
-	ansilove -q -d -S ${name}
-	filesize=$(file $name.png | awk 'NR==1{print $7}')
-	filesize=${filesize::-1}
-	if [ $filesize -gt 480 ] 
-	then
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") size: "${filesize}" ---> Video " $name
-		ffmpeg -hide_banner -loglevel panic -f lavfi -i color=s=1920x1080 -loop 1 -t 0.08 -i "$name".png -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" -map "[v]" $name.mp4 -nostdin
-		rm $name.png		
-		mv $name.mp4 mp4/
-	else 
-		echo -e "("${green}${processedFiles}${reset}"/"${green}${numFiles}${reset}") ---> png " $name
-	fi
-		mv $name old/
-done 
-
-mp4s=(mp4/*)
-pngs=(*.png)
-
-if [ ${#mp4s[@]} -gt ${#pngs[@]} ]
-then
-	maxPngs=${#pngs[@]}
-else
-	maxPngs=${#mp4s[@]}
-fi
-echo -e "("${green}${#pngs[@]}${reset}"/"${green}${#mp4s[@]}${reset}")" 
-echo "Adding pngs to mp4s"
-processedPngs=0
-for ((i=0; i<${maxPngs}; i++)); do
-	((processedPngs++))
-	echo -e "("${green}${processedPngs}${reset}"/"${green}${maxPngs}${reset}") Adding " ${pngs[$i]} " to " ${mp4s[$i]}
-	ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=800:600 ${pngs[$i]}.mp4
-	echo file ${pngs[$i]}.mp4 > list.txt
-	echo file ${mp4s[$i]} >> list.txt
-	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-${pngs[$i]}.mp4
-	echo -e ${green}"Copying new-"${pngs[$i]}".mp4 to  mp4/"${reset}
-	mv ${pngs[$i]} png/
-	mv ${pngs[$i]}.mp4 old/
-	mv ${mp4s[$i]} old/
-	rm list.txt
-done
-
-#move concatted png+mp4 to /mp4
-newmp4s=(*.mp4)
-
-newmp4files=${#newmp4s[@]}
-for ((i=0; i<${newmp4files}; i++)); do
-	echo -e ${green}"Copying "${newmp4s[$i]}" to  mp4/"${reset}
-	mv ${newmp4s[$i]} mp4/
-done
-#-------------
-
-mp4s=(mp4/*)
-pngs=(*.png)
-
-if [ ${#pngs[@]} -gt 0 ]
-then
-	touch list.txt
-	for ((i=0; i<${#pngs[@]}; i++)); do
-		echo -e "("${green}${i}${reset}"/"${green}${#pngs[@]}${reset}") Adding " ${pngs[$i]}
-		ffmpeg -hide_banner -loglevel panic -loop 1 -i "${pngs[$i]}" -pix_fmt yuv420p -t 8 -vf scale=800:600 ${pngs[$i]}.mp4
-		echo file ${pngs[$i]}".mp4" >> list.txt
-		mv ${pngs[$i]} png/
-	done
-	echo "Making final png mp4"
-	ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy new-allother.mp4
-	mv new-allother.mp4 mp4/
-	rm list.txt
-fi
-
-touch list.txt
-finalmp4s=(mp4/*)
-finalmp4s=( $(shuf -e "${finalmp4s[@]}") )
-if [ -f "img/intro.mp4" ]; then
-	echo "file img/intro.mp4" >> list.txt
-fi
-
-
-for ((i=0; i<${#finalmp4s[@]}; i++)); do
-	echo "("${i}"/"${#finalmp4s[@]}") Adding " ${finalmp4s[$i]}
-	echo file ${finalmp4s[$i]} >> list.txt
-done
-
-if [ -f "img/outtro.mp4" ]; then
-	echo "outtro"
-	echo "file img/outtro.mp4" >> list.txt
-fi
-
-ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy realFinal.mp4
-
-duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 realFinal.mp4)
-fade=5
-
-
-allMp3s=(/tmp/mp3s/*.mp3)
-shuffled=( $(shuf -e "${allMp3s[@]}") )
-touch /tmp/shuffMp3s.txt
-newMp3s=("*.MP3")
-if [ -n "$newMp3s" ]; then
-	for newMp3 in ${newMp3s[@]}; do
-		cp $newMp3 /tmp/mp3s
-		echo file /tmp/mp3s/$newMp3 >> /tmp/shuffMp3s.txt
-	done
-fi
-
-for mp31 in ${shuffled[@]}; do
-    echo file $mp31 >> /tmp/shuffMp3s.txt
-done
-echo "Joining random mp3s"
-ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i /tmp/shuffMp3s.txt -c copy /tmp/shuffmp3.mp3
-mv /tmp/shuffMp3s.txt .
-echo 'Combining mp3 with video'
-
-ffmpeg -hide_banner -loglevel panic -i realFinal.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest ${FinalOutName}
-rm mp4/new-allother.mp4
-rm /tmp/shuffmp3.mp3
-#rm realFinal.mp4
-
-echo "[===============]"
-echo "END $FinalOutName"
-echo "[===============]"
-
-touch list.txt
-echo 'Making Tiktoks'
-tiktoks=(mp4/*)
-for ((i=0; i<${#tiktoks[@]}; i++)); do
-	echo "("${i}"/"${#tiktoks[@]}") tiktoking  "${tiktoks[$i]}
-	if [ -f "img/intro.mp4" ]; then
-		echo "file img/intro.mp4" >> list.txt
-	fi
-	echo file ${tiktoks[$i]} >> list.txt
-    ffmpeg -hide_banner -loglevel panic -f concat -i list.txt -c copy ${tiktoks[$i]}-no-sound.mp4
-    rm list.txt
-    duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 ${tiktoks[$i]}-no-sound.mp4)
-    fade=5
-    allMp3s=(/tmp/mp3s/*.mp3)
-    shuffled=( $(shuf -e "${allMp3s[@]}") )
-    touch /tmp/shuffMp3s.txt
-    for mp31 in ${shuffled[@]}; do
-        echo file $mp31 >> /tmp/shuffMp3s.txt
+# Check required commands
+check_dependencies() {
+    local deps=("ffmpeg" "ansilove" "convert" "gif2png")
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" >/dev/null 2>&1; then
+            log_error "Required command not found: $dep"
+            exit 1
+        fi
     done
-    echo "Joining random mp3s"
-    ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i /tmp/shuffMp3s.txt -c copy /tmp/shuffmp3.mp3
-    echo 'Combining mp3 with video'
-    rm /tmp/shuffMp3s.txt
+}
 
-    IFS='/' read -ra my_array <<< "${tiktoks[$i]}"
-    ffmpeg -hide_banner -loglevel panic -i ${tiktoks[$i]}-no-sound.mp4 -i /tmp/shuffmp3.mp3 -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest tiktok/${my_array[-1]}.mp4
-    rm ${tiktoks[$i]}-no-sound.mp4
-    rm /tmp/shuffmp3.mp3
-done
+# Create required directories
+setup_directories() {
+    for dir in "${REQUIRED_DIRS[@]}"; do
+        if [[ ! -d "$dir" ]]; then
+            mkdir -p "$dir"
+            log_info "Created directory: $dir"
+        fi
+    done
+}
 
-echo "[===============]"
-echo "END making tiktoks"
-echo "[===============]"
+# Create backup of current directory
+create_backup() {
+    local current_dir=$(basename "$(pwd)")
+    local backup_dir="../clean_${current_dir}"
+    cp -R "$(pwd)" "$backup_dir"
+    log_info "Created backup at: $backup_dir"
+}
+
+# Clean filenames by removing special characters
+clean_filename() {
+    local filename="$1"
+    echo "$filename" | tr -d '!^+&% '
+}
+
+# Process image files (convert to PNG)
+process_images() {
+    for type in "${IMAGE_TYPES[@]}"; do
+        for file in $type; do
+            local clean_name=$(clean_filename "$file")
+            [[ "$file" != "$clean_name" ]] && mv "$file" "$clean_name"
+            
+            if [[ "$clean_name" =~ \.jpg$ || "$clean_name" =~ \.JPG$ ]]; then
+                convert "$clean_name" "${clean_name%.*}.png"
+                rm "$clean_name"
+                log_info "Converted $clean_name to PNG"
+            elif [[ "$clean_name" =~ \.gif$ || "$clean_name" =~ \.GIF$ ]]; then
+                gif2png -O -d -p "$clean_name"
+                rm "$clean_name"
+                log_info "Converted $clean_name to PNG"
+            fi
+        done
+    done
+}
+
+# Process text files with ansilove
+process_text_files() {
+    local processed=0
+    local total=0
+    declare -A seen_files
+
+    for type in "${TEXT_TYPES[@]}"; do
+        for file in $type; do
+            [[ ${seen_files[$file]} ]] && continue
+            seen_files[$file]=1
+            ((total++))
+            
+            local clean_name=$(clean_filename "$file")
+            [[ "$file" != "$clean_name" ]] && mv "$file" "$clean_name"
+            
+            ansilove -q -d -S "$clean_name"
+            
+            if [[ -f "$clean_name.png" ]]; then
+                local filesize=$(identify -format "%h" "$clean_name.png")
+                if ((filesize > 480)); then
+                    create_scrolling_video "$clean_name.png"
+                    rm "$clean_name.png"
+                    mv "$clean_name.mp4" mp4/
+                else
+                    mv "$clean_name.png" png/
+                fi
+            fi
+            
+            mv "$clean_name" old/
+            ((processed++))
+            log_info "Processed $processed/$total: $clean_name"
+        done
+    done
+}
+
+# Create scrolling video effect
+create_scrolling_video() {
+    local png_file="$1"
+    ffmpeg -hide_banner -loglevel panic \
+        -f lavfi -i color=s=1920x1080 \
+        -loop 1 -t 0.08 -i "$png_file" \
+        -filter_complex "[1:v]scale=1920:-2,setpts=if(eq(N\,0)\,0\,1+1/0.02/TB),fps=25[fg]; [0:v][fg]overlay=y=-'t*h*0.02':eof_action=endall[v]" \
+        -map "[v]" "${png_file%.*}.mp4" -nostdin
+}
+
+# Combine videos with audio
+combine_with_audio() {
+    local video_file="$1"
+    local output_file="$2"
+    local duration=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$video_file")
+    local fade=5
+    
+    # Create temporary audio file
+    create_random_audio_mix "/tmp/temp_audio.mp3"
+    
+    ffmpeg -hide_banner -loglevel panic \
+        -i "$video_file" -i "/tmp/temp_audio.mp3" \
+        -filter_complex "[1:a]afade=t=out:st=$(bc <<< "$duration-$fade"):d=$fade[a]" \
+        -map 0:v:0 -map "[a]" -c:v copy -c:a aac -shortest \
+        "$output_file"
+        
+    rm "/tmp/temp_audio.mp3"
+}
+
+# Create random audio mix from MP3s
+create_random_audio_mix() {
+    local output_file="$1"
+    local mp3_list="/tmp/mp3_list.txt"
+    
+    find /tmp/mp3s -name "*.mp3" -type f | shuf > "$mp3_list"
+    ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i "$mp3_list" -c copy "$output_file"
+    rm "$mp3_list"
+}
+
+# Main execution
+main() {
+    check_dependencies
+    create_backup
+    setup_directories
+    
+    # Get output filename from current directory
+    local output_filename=$(get_output_filename)
+    log_info "Output filename will be: $output_filename"
+    
+    # Clean up unnecessary files
+    for file in "${CLEANUP_FILES[@]}"; do
+        [[ -f "$file" ]] && rm "$file" && log_info "Removed $file"
+    done
+    
+    # Process files
+    process_images
+    process_text_files
+    
+    # Create final video
+    create_final_video "$output_filename"
+    create_tiktok_videos
+    
+    log_info "Processing complete: $output_filename"
+}
+
+# Create final concatenated video
+create_final_video() {
+    local output_file="$1"
+    local concat_list="list.txt"
+    
+    # Create concat list
+    [[ -f "img/intro.mp4" ]] && echo "file 'img/intro.mp4'" > "$concat_list"
+    find mp4/ -name "*.mp4" -type f | sort -R | sed 's/^/file '"'"'/;s/$/'\''"/' >> "$concat_list"
+    [[ -f "img/outro.mp4" ]] && echo "file 'img/outro.mp4'" >> "$concat_list"
+    
+    # Create final video
+    ffmpeg -hide_banner -loglevel panic -f concat -safe 0 -i "$concat_list" -c copy "temp_final.mp4"
+    combine_with_audio "temp_final.mp4" "$output_file"
+    
+    rm "temp_final.mp4" "$concat_list"
+}
+
+# Create TikTok versions
+create_tiktok_videos() {
+    find mp4/ -name "*.mp4" -type f | while read -r video; do
+        local basename=$(basename "$video")
+        local tiktok_output="tiktok/${basename}"
+        
+        # Create video without sound
+        ffmpeg -hide_banner -loglevel panic -i "$video" -c copy "temp_nosound.mp4"
+        
+        # Add random audio
+        combine_with_audio "temp_nosound.mp4" "$tiktok_output"
+        rm "temp_nosound.mp4"
+        
+        log_info "Created TikTok version: $tiktok_output"
+    done
+}
+
+# Execute main function
+main
